@@ -1,19 +1,43 @@
 import logging
 import numpy as np
-# Example using a placeholder database interaction - replace with actual AlloyDB interaction
 import json
-# For AlloyDB, you'd use psycopg2 or SQLAlchemy with AlloyDB connection details
+import psycopg2
 
 logger = logging.getLogger(__name__)
 
 class Database:
     def __init__(self, config):
         self.config = config
-        # Initialize database connection here if needed (e.g., for AlloyDB)
-        logger.info("Database service initialized (Placeholder - Replace with AlloyDB interaction)")
+        self.connection = None
+        connection_string = self.config.get("ALLOYDB_CONNECTION_STRING")
+        try:
+            if connection_string:
+                self.connection = psycopg2.connect(connection_string)
+                logger.info("Successfully connected to AlloyDB using connection string.")
+            else:
+                self.connection = psycopg2.connect(
+                    host=self.config["db_host"],
+                    database=self.config["ALLOYDB_DATABASE_NAME"],
+                    user=self.config["ALLOYDB_USER"],
+                    password=self.config["ALLOYDB_PASSWORD"],
+                )
+                logger.info("Successfully connected to AlloyDB using host, database, user, and password.")
+        except psycopg2.Error as e:
+            if connection_string:
+                logger.error(f"Error connecting to AlloyDB using connection string: {e}", exc_info=True)
+            else:
+                logger.error(f"Error connecting to AlloyDB using host, database, user, and password: {e}", exc_info=True)
+            raise  # Re-raise the exception to halt application startup
 
+    def __del__(self):
+        """Ensure database connection is closed when the object is destroyed."""
+        if self.connection:
+            self.connection.close()
+            logger.info("Database connection closed.")
+            
 # - Table Name : videos
 # - Schema:
+
 # 	video_id VARCHAR(255) PRIMARY KEY,
 # 	filename VARCHAR(255),
 # 	video_gcs_uri VARCHAR(255),
@@ -23,7 +47,6 @@ class Database:
 # 	video_id VARCHAR(255) PRIMARY KEY,
 # 	filename VARCHAR(255),
 # 	video_gcs_uri VARCHAR(255),
-# 	upload_date TIMESTAMP
 # 					)
 
     def store_video_metadata(self, video_metadata):
@@ -59,7 +82,7 @@ class Database:
                     WHERE video_id = %s
                 """, (video_id)) # Convert numpy array to list for psycopg2
                 result = cur.fetchone()
-                if not result:
+                if not result and cur.rowcount == 0:
                   logger.debug(f"No videos found with id {video_id}.")
                 return result
         except Exception as e:
@@ -111,7 +134,7 @@ class Database:
         except Exception as e:
             logger.error(f"Error during video deletion operation for video {video_id}: {e}", exc_info=True)
         return Null # Placeholder - return Null for now
-    
+
     def get_frames_by_video_id(self, video_id):
         """Gets all frames associated with a video ID."""
         logger.debug(f"Fetching frames for video ID: {video_id}")
@@ -139,6 +162,7 @@ class Database:
 
 # - Table Name : frames
 # - Schema:
+
 # 	frame_id VARCHAR(255) PRIMARY KEY,
 # 	video_id VARCHAR(255),
 # 	frame_gcs_uri VARCHAR(255),
@@ -146,6 +170,7 @@ class Database:
 # 	detected_objects_json VARCHAR(255),
 # 	text_description VARCHAR(255),
 # 	frame_embedding vector(768),
+#   objects_embedding vector(768),
 # 	objects_embedding vector(768),
 	
 # create table frames (
@@ -235,9 +260,4 @@ class Database:
                         'frame_gcs_uri': frame_gcs_uri,
                         'timeframe': timeframe,
                         'detected_objects': detected_objects,
-                        'text_description': text_description
-                    })
-                return similar_frames
-        except Exception as e:
-            logger.error(f"Error during Detected Objects Similarity Search for video {video_id}: {e}", exc_info=True)
-        return [] # Placeholder - return empty list for now
+                        '

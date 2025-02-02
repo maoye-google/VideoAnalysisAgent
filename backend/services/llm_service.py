@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 class LLMService:
     def __init__(self, config):
         self.config = config
-        configure(api_key=config.GCP_VERTEX_AI_API_KEY)
-        self.model = GenerativeModel(config.GEMINI_MODEL_NAME) # e.g., 'gemini-2.0-flash-thinking'
+        configure(api_key=config.get('GCP_VERTEX_AI_API_KEY'))
+        self.model = GenerativeModel(config.get('GEMINI_MODEL_NAME')) # e.g., 'gemini-2.0-flash-thinking'
 
     def analyze_image(self, image_bytes):
         try:

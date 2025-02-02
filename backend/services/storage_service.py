@@ -11,10 +11,10 @@ class StorageService:
     def __init__(self, config, db: Database):
         self.config = config
         self.db=db
-        self.storage_client = storage.Client(project=config.GCP_PROJECT_ID)
+        self.storage_client = storage.Client(project=config.get('GCP_PROJECT_ID'))
         self.db = db
-        self.video_bucket_name = config.GCS_BUCKET_NAME_VIDEOS
-        self.frame_bucket_name = config.GCS_BUCKET_NAME_FRAMES
+        self.video_bucket_name = config.get('GCS_BUCKET_NAME_VIDEOS')
+        self.frame_bucket_name = config.get('GCS_BUCKET_NAME_FRAMES')
         self.video_bucket = self.storage_client.bucket(self.video_bucket_name)
         self.frame_bucket = self.storage_client.bucket(self.frame_bucket_name)
 
@@ -55,7 +55,7 @@ class StorageService:
                 raise ValueError("video gcs uri is null")
 
             blob = self.storage_client.blob_from_uri(video_gcs_uri)
-            temp_filepath = os.path.join(self.config.VIDEO_UPLOAD_FOLDER_VIDEOS, filename) # Local temp path
+            temp_filepath = os.path.join(self.config.get('VIDEO_UPLOAD_FOLDER_VIDEOS'), filename) # Local temp path
             blob.download_to_filename(temp_filepath)
             logger.info(f"Video {video_filename} downloaded from GCS to {temp_filepath}")
             return temp_filepath

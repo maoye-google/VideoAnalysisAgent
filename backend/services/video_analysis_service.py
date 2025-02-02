@@ -18,7 +18,7 @@ class VideoAnalysisService:
         self.db = db
         self.llm_service = LLMService(config)
         self.analysis_processes = {} # track analysis process status, progress, cancellation
-        self.analysis_progress_interval = config.ANALYSIS_PROGRESS_UPDATE_INTERVAL # seconds
+        self.analysis_progress_interval = config.get('ANALYSIS_PROGRESS_UPDATE_INTERVAL') # seconds
 
     def start_analysis(self, video_id):
         if video_id in self.analysis_processes and self.analysis_processes[video_id]['status'] == 'Running':

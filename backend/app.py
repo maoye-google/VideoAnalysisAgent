@@ -16,6 +16,10 @@ app.config.from_object(Config)
 logging.basicConfig(level=logging.INFO) # Set default log level
 logger = logging.getLogger(__name__)
 
+# print(app.config)
+# Correct Way to get Config : print(app.config.get('GCP_PROJECT_ID','Unknown'))
+# Wrong Way to get Config: print(app.config.GCP_PROJECT_ID)
+
 # Initialize services
 db = Database(app.config)  
 storage_service = StorageService(app.config, db) #Pass db instance to storage service
@@ -98,9 +102,4 @@ def query_video(video_id):
         return jsonify({'message': 'Failed to process query'}), 500
 
 @app.route('/frames/<filename>')
-def get_frame_image(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER_FRAMES'], filename)
-
-
-if __name__ == '__main__':
-    app.run(debug=True) # Run in debug mode for local development
+def 
