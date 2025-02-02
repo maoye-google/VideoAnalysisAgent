@@ -50,11 +50,11 @@ function VideoList({ onVideoSelected, onVideoDeleted }) {
             <h2>Available Videos</h2>
             <ul>
                 {videos.map((video) => (
-                    <li key={video.id}>
+                    <li key={video.video_id}>
                         {video.filename}
-                        <button onClick={() => onVideoSelected(video.id)}>Select</button>
-                        <button onClick={() => handleAnalyzeVideo(video.id)}>Analyze</button>
-                        <button onClick={() => handleDeleteVideo(video.id)}>Delete</button>
+                        <button onClick={() => onVideoSelected(video.video_id)}>Select</button>
+                        <button onClick={() => handleAnalyzeVideo(video.video_id)}>Analyze</button>
+                        <button onClick={() => handleDeleteVideo(video.video_id)}>Delete</button>
                     </li>
                 ))}
             </ul>

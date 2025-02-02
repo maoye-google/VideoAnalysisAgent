@@ -2,6 +2,7 @@ import logging
 import numpy as np
 import json
 import psycopg2
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -81,21 +82,25 @@ class Database:
     def get_video_metadata(self, video_id):
         """Performs basic CRUD operation in AlloyDB to get video metadata."""
         # Placeholder implementation - replace with actual AlloyDB vector search
-        logger.debug(f"Performing video get for video ID: {video_id}")
+        logger.debug(f"Get video metadata for video ID: {video_id}")
         try:
             with self.connection.cursor() as cur:
                 cur.execute("""
                     SELECT video_id, video_gcs_uri, filename, upload_date
                     FROM videos
-                    WHERE video_id = %s
-                """, (video_id)) # Convert numpy array to list for psycopg2
+                    WHERE video_id = %(video_id)s
+                """, {"video_id": video_id}) # Convert numpy array to list for psycopg2
                 result = cur.fetchone()
-                if not result and cur.rowcount == 0:
-                  logger.debug(f"No videos found with id {video_id}.")
-                return result
+                if not result:
+                    logger.debug(f"No videos found with id {video_id}.")
+                    return None
+                else:
+                    logger.debug(f"Found video with id {video_id}.")
+                    return dict(zip(['video_id', 'video_gcs_uri', 'filename', 'upload_date'], result))
+                    # return result
         except Exception as e:
             logger.error(f"Error during video get operation for video {video_id}: {e}", exc_info=True)
-        return None # Placeholder - return Null for now
+            return None # Placeholder - return Null for now
     
     def list_video_metadata(self):
         """Lists all videos' metadata."""
@@ -111,8 +116,8 @@ class Database:
               video_list = [dict(zip(['video_id', 'video_gcs_uri', 'filename', 'upload_date'], row)) for row in results]
               return video_list
         except Exception as e:
-          logger.error(f"Error during video get operation for video {video_id}: {e}", exc_info=True)
-        return []
+            logger.error(f"Error during video get operation for video {video_id}: {e}", exc_info=True)
+            return []
 
     def delete_video_metadata(self, video_id):
         """Deletes a video's metadata."""
@@ -124,8 +129,8 @@ class Database:
             with self.connection.cursor() as cur:
                 cur.execute("""
                     DELETE FROM frames
-                    WHERE video_id = %s
-                """, (video_id,))
+                    WHERE video_id = %(video_id)s
+                """, {"video_id" : video_id})
                 self.connection.commit()
                 logger.debug(f"Frame metadata deleted successfully for video ID: {video_id}")
                 
@@ -135,13 +140,14 @@ class Database:
         # Then delete video    
         try:
             with self.connection.cursor() as cur:
-                cur.execute("DELETE FROM videos WHERE video_id = %s", (video_id,))
+                cur.execute("DELETE FROM videos WHERE video_id = %(video_id)s", {"video_id" : video_id})
                 self.connection.commit()  # Commit the deletion
                 
                 logger.debug(f"Video metadata deleted successfully for video ID: {video_id}")
         except Exception as e:
             logger.error(f"Error during video deletion operation for video {video_id}: {e}", exc_info=True)
         return Null # Placeholder - return Null for now
+
 
     def get_frames_by_video_id(self, video_id):
         """Gets all frames associated with a video ID."""
@@ -151,18 +157,10 @@ class Database:
                 cur.execute("""
                     SELECT frame_id, video_id, frame_gcs_uri, timeframe, detected_objects_json, text_description
                     FROM frames
-                    WHERE video_id = %s
-                """, (video_id,))
+                    WHERE video_id = %(video_id)s
+                """, {"video_id" : video_id})
                 results = cur.fetchall()
-                frames = []
-                for row in results:
-                    frames.append({
-                        'frame_id': row[0],
-                        'video_id': row[1],
-                        'frame_gcs_uri': row[2],
-                        'timeframe': row[3],
-                        'detected_objects_json': row[4],
-                        'text_description': row[5]})
+                frames = [dict(zip(['frame_id', 'video_id', 'frame_gcs_uri', 'timeframe','detected_objects_json','text_description'], row)) for row in results]
                 return frames
         except Exception as e:
             logger.error(f"Error fetching frames for video ID {video_id}: {e}", exc_info=True)
@@ -221,24 +219,18 @@ class Database:
         try:
             with self.connection.cursor() as cur:
                 cur.execute("""
-                    SELECT frame_id, frame_gcs_uri, timeframe, detected_objects_json, text_description, frame_embedding
+                    SELECT frame_id, video_id, frame_gcs_uri, timeframe, detected_objects_json, text_description
                     FROM frames
-                    WHERE video_id = %s
-                    ORDER BY frame_embedding <=> embedding('text-embedding-005', %s)::vector
-                    LIMIT %s
-                """, (video_id, query_str, top_k)) # Convert numpy array to list for psycopg2
+                    WHERE video_id = %(video_id)s
+                    ORDER BY frame_embedding <=> embedding('text-embedding-005', %(query_str)s)::vector
+                    LIMIT %(top_k)s
+                """, {
+                    "video_id":video_id, 
+                    "query_str":query_str, 
+                    "top_k":top_k
+                }) # Convert numpy array to list for psycopg2
                 results = cur.fetchall()
-                similar_frames = []
-                for row in results:
-                    frame_id, frame_gcs_uri, timeframe, detected_objects_json, text_description, frame_embedding = row
-                    detected_objects = json.loads(detected_objects_json) if detected_objects_json else []
-                    similar_frames.append({
-                        'frame_id': frame_id,
-                        'frame_gcs_uri': frame_gcs_uri,
-                        'timeframe': timeframe,
-                        'detected_objects': detected_objects,
-                        'text_description': text_description
-                    })
+                similar_frames = [dict(zip(['frame_id', 'video_id', 'frame_gcs_uri', 'timeframe','detected_objects_json','text_description'], row)) for row in results]
                 return similar_frames
         except Exception as e:
             logger.error(f"Error during Frame Similarity Search for video {video_id}: {e}", exc_info=True)
@@ -251,24 +243,18 @@ class Database:
         try:
             with self.connection.cursor() as cur:
                 cur.execute("""
-                    SELECT frame_id, frame_gcs_uri, timeframe, detected_objects_json, text_description, objects_embedding
+                    SELECT frame_id, video_id, frame_gcs_uri, timeframe, detected_objects_json, text_description
                     FROM frames
-                    WHERE video_id = %s
-                    ORDER BY objects_embedding <=> embedding('text-embedding-005', %s)::vector
-                    LIMIT %s
-                """, (video_id, query_str, top_k)) # Convert numpy array to list for psycopg2
+                    WHERE video_id = %(video_id)s
+                    ORDER BY objects_embedding <=> embedding('text-embedding-005', %(query_str)s)::vector
+                    LIMIT %(top_k)s
+                 """, {
+                    "video_id":video_id, 
+                    "query_str":query_str, 
+                    "top_k":top_k
+                }) # Convert numpy array to list for psycopg2
                 results = cur.fetchall()
-                similar_frames = []
-                for row in results:
-                    frame_id, frame_gcs_uri, timeframe, detected_objects_json, text_description, objects_embedding = row
-                    detected_objects = json.loads(detected_objects_json) if detected_objects_json else []
-                    similar_frames.append({
-                        'frame_id': frame_id,
-                        'frame_gcs_uri': frame_gcs_uri,
-                        'timeframe': timeframe,
-                        'detected_objects': detected_objects,
-                        'text_description': text_description
-                    })
+                similar_frames = [dict(zip(['frame_id', 'video_id', 'frame_gcs_uri', 'timeframe','detected_objects_json','text_description'], row)) for row in results]
                 return similar_frames
         except Exception as e:
             logger.error(f"Error during Detected Objects Similarity Search for video {video_id}: {e}", exc_info=True)

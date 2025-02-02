@@ -16,6 +16,7 @@ function AnalysisProgress({ selectedVideoId }) {
     const progressCheckInterval = React.useRef(null);
 
     const startProgressCheck = () => {
+        console.log('Start Progress Check !')
         setIsAnalyzing(true);
         setAnalysisStatus("Analyzing");
         progressCheckInterval.current = setInterval(async () => {

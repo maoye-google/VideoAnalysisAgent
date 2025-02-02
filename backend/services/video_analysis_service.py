@@ -51,11 +51,13 @@ class VideoAnalysisService:
     def _analyze_video_thread(self, video_id):
         try:
             logger.info(f"Starting video analysis for video ID: {video_id}")
-            video_filepath = self.storage_service.download_video_to_temp(video_id)
+            target_video_metadata = self.storage_service.get_video_info(video_id)
+            video_filepath = self.storage_service.download_video_to_temp(target_video_metadata)
+            
             if not video_filepath:
                 raise FileNotFoundError(f"Failed to download video {video_id} for analysis.")
 
-            sampling_rate = self.config.VIDEO_SAMPLING_RATE
+            sampling_rate = int(self.config.get('VIDEO_SAMPLING_RATE','1'))
             frame_count = 0
             processed_frames = 0
             cap = cv2.VideoCapture(video_filepath)
@@ -93,7 +95,9 @@ class VideoAnalysisService:
 
                     # Analyze frame using LLM and create embedding
                     if frame_analysis_result:
-                        frame_gcs_uri = self.storage_service.upload_frame_bytes(frame_bytes, frame_filename)
+                        self.storage_service.upload_frame_bytes(frame_id, video_id, frame_bytes)
+
+                        # self.storage_service.upload_frame_bytes(frame_bytes, frame_filename)
                         logger.debug(f"Frame {frame_id} uploaded to GCS for video {video_id}")
                         frame_metadata = {
                             'frame_id': frame_id,

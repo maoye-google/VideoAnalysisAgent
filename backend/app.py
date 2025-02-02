@@ -6,14 +6,19 @@ from services.query_service import QueryService
 from services.storage_service import StorageService
 from db.database import Database
 import logging
+import uuid
+import traceback
 import os
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}}) # Allow CORS for /api endpoints
+CORS(app, origins= [
+    "*",
+    "cloudworkstations.dev"
+]) # Allow CORS for /api endpoints
 app.config.from_object(Config)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO) # Set default log level
+logging.basicConfig(level=logging.DEBUG) # Set default log level
 logger = logging.getLogger(__name__)
 
 # print(app.config)
@@ -29,20 +34,29 @@ video_analysis_service = VideoAnalysisService(app.config, storage_service, db)
 
 @app.route('/api/videos', methods=['POST'])
 def upload_video():
+    logger.debug('Start File Uploading')
+
     if 'video' not in request.files:
         return jsonify({'message': 'No video file part'}), 400
     video_file = request.files['video']
     if video_file.filename == '':
         return jsonify({'message': 'No selected video file'}), 400
 
+    logger.debug(f'video file name is {video_file.filename}')
+
+    video_id = str(uuid.uuid4())
     try:
-        video_id = storage_service.upload_video(video_file)
+        video_metadata = storage_service.upload_video(video_file,video_id)
         return jsonify({'message': 'Video uploaded successfully', 'video_id': video_id}), 201
     except Exception as e:
         logger.error(f"Error uploading video: {e}")
+        traceback.print_exc()  # Print the full traceback for debugging
         return jsonify({'message': 'Failed to upload video'}), 500
 
 @app.route('/api/videos', methods=['GET'])
+
+
+
 def list_videos():
     try:
         videos = storage_service.list_videos()
