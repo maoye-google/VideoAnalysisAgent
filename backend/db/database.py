@@ -5,28 +5,35 @@ import psycopg2
 
 logger = logging.getLogger(__name__)
 
+import urllib.parse
+
+def _create_connection_string(user,password,host,port,database):
+    encoded_password = urllib.parse.quote_plus(password) # Encode the password
+    
+    # Construct the connection string
+    conn_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{database}"
+
+    return conn_string
+
 class Database:
     def __init__(self, config):
         self.config = config
         self.connection = None
-        connection_string = self.config.get("ALLOYDB_CONNECTION_STRING")
+
+        connection_string = _create_connection_string(
+            self.config.get("ALLOYDB_USER"),
+            self.config.get("ALLOYDB_PASSWORD"),
+            self.config.get("ALLOYDB_HOST"),
+            self.config.get("ALLOYDB_PORT"),
+            self.config.get("ALLOYDB_DATABASE_NAME")
+        )
+        print(f" Connection String is {connection_string}")
+
         try:
-            if connection_string:
-                self.connection = psycopg2.connect(connection_string)
-                logger.info("Successfully connected to AlloyDB using connection string.")
-            else:
-                self.connection = psycopg2.connect(
-                    host=self.config["db_host"],
-                    database=self.config["ALLOYDB_DATABASE_NAME"],
-                    user=self.config["ALLOYDB_USER"],
-                    password=self.config["ALLOYDB_PASSWORD"],
-                )
-                logger.info("Successfully connected to AlloyDB using host, database, user, and password.")
+            self.connection = psycopg2.connect(connection_string)
+            logger.info("Successfully connected to AlloyDB using connection string.")
         except psycopg2.Error as e:
-            if connection_string:
-                logger.error(f"Error connecting to AlloyDB using connection string: {e}", exc_info=True)
-            else:
-                logger.error(f"Error connecting to AlloyDB using host, database, user, and password: {e}", exc_info=True)
+            logger.error(f"Error connecting to AlloyDB using connection string: {e}", exc_info=True)
             raise  # Re-raise the exception to halt application startup
 
     def __del__(self):
@@ -47,6 +54,7 @@ class Database:
 # 	video_id VARCHAR(255) PRIMARY KEY,
 # 	filename VARCHAR(255),
 # 	video_gcs_uri VARCHAR(255),
+# 	upload_date TIMESTAMP
 # 					)
 
     def store_video_metadata(self, video_metadata):
@@ -170,7 +178,6 @@ class Database:
 # 	detected_objects_json VARCHAR(255),
 # 	text_description VARCHAR(255),
 # 	frame_embedding vector(768),
-#   objects_embedding vector(768),
 # 	objects_embedding vector(768),
 	
 # create table frames (
@@ -260,4 +267,9 @@ class Database:
                         'frame_gcs_uri': frame_gcs_uri,
                         'timeframe': timeframe,
                         'detected_objects': detected_objects,
-                        '
+                        'text_description': text_description
+                    })
+                return similar_frames
+        except Exception as e:
+            logger.error(f"Error during Detected Objects Similarity Search for video {video_id}: {e}", exc_info=True)
+        return [] # Placeholder - return empty list for now

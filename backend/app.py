@@ -102,4 +102,9 @@ def query_video(video_id):
         return jsonify({'message': 'Failed to process query'}), 500
 
 @app.route('/frames/<filename>')
-def 
+def get_frame_image(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER_FRAMES'], filename)
+
+
+if __name__ == '__main__':
+    app.run(debug=True) # Run in debug mode for local development

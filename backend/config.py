@@ -22,6 +22,8 @@ class Config:
     ALLOYDB_DATABASE_NAME = os.environ.get('ALLOYDB_DATABASE_NAME')
     ALLOYDB_USER = os.environ.get('ALLOYDB_USER')
     ALLOYDB_PASSWORD = os.environ.get('ALLOYDB_PASSWORD')
+    ALLOYDB_HOST = os.environ.get('ALLOYDB_HOST')
+    ALLOYDB_PORT = os.environ.get('ALLOYDB_PORT')
 
     # Video Analysis Config
     VIDEO_UPLOAD_FOLDER_VIDEOS = 'uploads/videos' # Local upload folder for videos (for local dev)
