@@ -6,6 +6,7 @@ frontend/package-lock.json
 
 # Backend
 backend/__pycache__
+backend/**/__pycache__
 backend/*.pyc
 backend/*.log
 backend/credential/*

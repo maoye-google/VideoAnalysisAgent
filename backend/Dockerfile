@@ -1,10 +1,12 @@
-FROM python:3.9-slim-buster
+FROM python:3.10-slim-buster
 
+ENV PYTHONUNBUFFERED True
+
+ENV APP_HOME /app
 WORKDIR /app
 
-COPY backend/requirements.txt ./requirements.txt
-RUN pip install -r requirements.txt
+COPY . ./
 
-COPY backend .
+RUN pip install -r requirements.txt
 
 CMD ["python", "app.py"]

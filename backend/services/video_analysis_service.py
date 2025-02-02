@@ -1,6 +1,7 @@
 import logging
 import os
 import cv2
+import numpy as np
 import uuid
 import threading
 import time
@@ -80,14 +81,20 @@ class VideoAnalysisService:
                 if frame_count % frame_interval == 0:
                     frame_id = str(uuid.uuid4())
                     frame_filename = f"frame_{video_id}_{frame_id}.jpg"
-                    frame_filepath = os.path.join(self.config.VIDEO_UPLOAD_FOLDER_FRAMES, frame_filename)
-                    cv2.imwrite(frame_filepath, frame)
-                    frame_gcs_uri = self.storage_service.upload_frame(frame_filepath, frame_filename)
-                    os.remove(frame_filepath) # Clean up local frame file
+
+                    # Convert the frame to JPEG bytes
+                    ret, frame_bytes = cv2.imencode('.jpg', frame)
+                    if not ret:
+                         raise Exception("Could not convert frame to bytes")
+                    frame_bytes = frame_bytes.tobytes()
+
+                    # Analyze frame using LLM
+                    frame_analysis_result = self.llm_service.analyze_image(frame_bytes)
 
                     # Analyze frame using LLM and create embedding
-                    frame_analysis_result = self.llm_service.analyze_image(frame_gcs_uri) # Assuming this returns detected objects and text
                     if frame_analysis_result:
+                        frame_gcs_uri = self.storage_service.upload_frame_bytes(frame_bytes, frame_filename)
+                        logger.debug(f"Frame {frame_id} uploaded to GCS for video {video_id}")
                         frame_metadata = {
                             'frame_id': frame_id,
                             'video_id': video_id,
@@ -96,7 +103,7 @@ class VideoAnalysisService:
                             'detected_objects': frame_analysis_result.get('detected_objects', []), # List of objects with labels and bounding boxes
                             'text_description': frame_analysis_result.get('text_description', '')
                         }
-                        self.db.store_frame_embedding(frame_metadata, embedding)
+                        self.db.store_frame_metadata(frame_metadata)
                         logger.debug(f"Frame {frame_id} analysis result stored for video {video_id}")
 
                 frame_count += 1

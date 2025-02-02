@@ -58,9 +58,10 @@ def delete_video(video_id):
 
 @app.route('/api/videos/<video_id>/analyze', methods=['POST'])
 def analyze_video(video_id):
+
     try:
         video_analysis_service.start_analysis(video_id)
-        return jsonify({'message': 'Video analysis started'}), 202  # Accepted for processing
+        return jsonify({'message': 'Video analysis started'}), 202
     except Exception as e:
         logger.error(f"Error starting video analysis for {video_id}: {e}")
         return jsonify({'message': 'Failed to start video analysis'}), 500

@@ -4,3 +4,4 @@ python-dotenv
 google-cloud-storage
 google-generativeai
 opencv-python-headless
+Pillow>=10.2.0

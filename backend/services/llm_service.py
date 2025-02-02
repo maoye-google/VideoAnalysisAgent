@@ -1,5 +1,7 @@
 import logging
-from google.generativeai import GenerativeModel, configure, Part
+from PIL import Image
+from io import BytesIO
+from google.generativeai import GenerativeModel, configure
 
 logger = logging.getLogger(__name__)
 
@@ -9,17 +11,17 @@ class LLMService:
         configure(api_key=config.GCP_VERTEX_AI_API_KEY)
         self.model = GenerativeModel(config.GEMINI_MODEL_NAME) # e.g., 'gemini-2.0-flash-thinking'
 
-    def analyze_image(self, image_gcs_uri):
+    def analyze_image(self, image_bytes):
         try:
-            image_part = Part.from_uri(image_gcs_uri, mime_type='image/jpeg') # Assuming JPEG frames
+            image = Image.open(BytesIO(image_bytes))
             prompt = '''Describe the objects and scene in this image in detail, and identify any detected objects with bounding boxes if possible. \n
                         Output in JSON format with 'text_description' and 'detected_objects'.
                         'text_description' should be less then 100 words, explaning what the frame contains.
                         'detected_objects' should be a list of max to 10 objects with 'object_type', 'object_color', 'object_descrition').
-                        Never return masks or code fencing. Never ask questions.
+                        Never return masks or code fencing. Never ask questions. Do not describe the image format, and do not mention colors if you are not sure.
             '''
 
-            response = self.model.generate_content([prompt, image_part])
+            response = self.model.generate_content([prompt, image])
             response.resolve() # Resolve futures, handle potential errors.
 
             if response.parts:
@@ -41,5 +43,5 @@ class LLMService:
                 return {'text_description': 'No description from LLM', 'detected_objects': []}
 
         except Exception as e:
-            logger.error(f"Error analyzing image from GCS URI: {image_gcs_uri}: {e}", exc_info=True)
+            logger.error(f"Error analyzing image: {e}", exc_info=True)
             return {'text_description': 'Error during image analysis', 'detected_objects': []}
