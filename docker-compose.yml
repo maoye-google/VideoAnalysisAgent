@@ -1,0 +1,38 @@
+version: "3.8"
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:5000/api # Adjust if backend runs on a different port in Docker
+    depends_on:
+      - backend
+    stdin_open: true # For react-scripts hot reloading
+    tty: true
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=1 # Enable debug mode for local dev
+      # --- Environment variables for backend ---
+      # Copy necessary variables from .env.example and set your values here or in a .env file
+      # GCP_PROJECT_ID=your-gcp-project-id
+      # GCP_REGION=us-central1
+      # GCP_VERTEX_AI_API_KEY=YOUR_VERTEX_AI_API_KEY
+      # GCS_BUCKET_NAME_VIDEOS=your-video-bucket-name
+      # GCS_BUCKET_NAME_FRAMES=your-frame-bucket-name
+      # ALLOYDB_CONNECTION_STRING=your-alloydb-connection-string # Or individual AlloyDB settings
+      # VIDEO_SAMPLING_RATE=5
+    depends_on:
+      # If you were running a local AlloyDB instance for testing, you'd add it here.
+      # For cloud deployment, the backend will connect to your cloud AlloyDB.
+      pass

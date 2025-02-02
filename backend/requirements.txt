@@ -1,0 +1,6 @@
+Flask
+Flask-CORS
+python-dotenv
+google-cloud-storage
+google-generativeai
+opencv-python-headless
