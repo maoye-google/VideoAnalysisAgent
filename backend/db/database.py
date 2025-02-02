@@ -146,7 +146,7 @@ class Database:
                 logger.debug(f"Video metadata deleted successfully for video ID: {video_id}")
         except Exception as e:
             logger.error(f"Error during video deletion operation for video {video_id}: {e}", exc_info=True)
-        return Null # Placeholder - return Null for now
+        return None # Placeholder - return Null for now
 
 
     def get_frames_by_video_id(self, video_id):

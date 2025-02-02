@@ -25,11 +25,11 @@ class StorageService:
         self.video_bucket = self.storage_client.bucket(self.video_bucket_name)
         self.frame_bucket = self.storage_client.bucket(self.frame_bucket_name)
 
-    def _compose_gcs_video_name(video_id, filename):
+    def _compose_gcs_video_name(self,video_id, filename):
         gcs_file_name = f'{video_id}_{_quote_file_name(filename)}'
         return gcs_file_name
 
-    def _compose_gcs_frame_name(video_id, frame_id):
+    def _compose_gcs_frame_name(self,video_id, frame_id):
         gcs_file_name = f'{video_id}_{frame_id}.jpg'
         return gcs_file_name
 
@@ -105,18 +105,18 @@ class StorageService:
             return []
 
 
-    def _delete_blob(bucket_name,object_name):
+    def _delete_blob(self,bucket_name,object_name):
         """Deletes a blob from the bucket."""
         bucket = self.storage_client.bucket(bucket_name)
-        blob = bucket.blob(blob_name)
+        blob = bucket.blob(object_name)
         try:
             blob.delete()
-            print(f"Blob {blob_name} deleted from bucket {bucket_name}.")
+            print(f"Blob {object_name} deleted from bucket {bucket_name}.")
         except Exception as e:
-            print(f"Error deleting blob {blob_name} from bucket {bucket_name}: {e}")
+            print(f"Error deleting blob {object_name} from bucket {bucket_name}: {e}")
 
 
-    def delete_frames(video_id):
+    def delete_frames(self,video_id):
         """Deletes all frames related to the certain video_id."""
         try:
             logger.debug(f'Check Frame Existance')
