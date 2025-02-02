@@ -8,6 +8,7 @@ frontend/package-lock.json
 backend/__pycache__
 backend/*.pyc
 backend/*.log
+backend/credential/*
 backend/instance
 backend/venv
 backend/uploads/videos/*
