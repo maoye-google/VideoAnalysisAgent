@@ -25,3 +25,6 @@ backend/requirements.txt # If you manage requirements separately
 
 # IDX
 .idx
+
+# Test Recordings
+recordings/*
