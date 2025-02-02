@@ -9,9 +9,9 @@ services:
       - /app/node_modules
     environment:
       - REACT_APP_API_BASE_URL=http://localhost:5000/api # Adjust if backend runs on a different port in Docker
-    depends_on:
-      - backend
-    stdin_open: true # For react-scripts hot reloading
+    depends_on :
+      - backend #frontend depends on backend
+    stdin_open: true 
     tty: true
 
   backend:
@@ -32,7 +32,5 @@ services:
       # GCS_BUCKET_NAME_FRAMES=your-frame-bucket-name
       # ALLOYDB_CONNECTION_STRING=your-alloydb-connection-string # Or individual AlloyDB settings
       # VIDEO_SAMPLING_RATE=5
-    depends_on:
-      # If you were running a local AlloyDB instance for testing, you'd add it here.
-      # For cloud deployment, the backend will connect to your cloud AlloyDB.
-      pass
+    depends_on: #backend depends on nothing for now, but this is a list
+      []
