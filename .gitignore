@@ -21,3 +21,6 @@ backend/requirements.txt # If you manage requirements separately
 *.swo
 *.log
 *.sqlite
+
+# IDX
+.idx
