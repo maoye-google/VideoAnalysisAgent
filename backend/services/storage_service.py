@@ -1,14 +1,18 @@
 import logging
 import os
-import uuid
+from datetime import datetime
+
 from google.cloud import storage
+from db.database import Database
 
 logger = logging.getLogger(__name__)
 
 class StorageService:
-    def __init__(self, config):
+    def __init__(self, config, db: Database):
         self.config = config
+        self.db=db
         self.storage_client = storage.Client(project=config.GCP_PROJECT_ID)
+        self.db = db
         self.video_bucket_name = config.GCS_BUCKET_NAME_VIDEOS
         self.frame_bucket_name = config.GCS_BUCKET_NAME_FRAMES
         self.video_bucket = self.storage_client.bucket(self.video_bucket_name)
@@ -16,25 +20,42 @@ class StorageService:
 
     def upload_video(self, video_file):
         try:
-            video_id = str(uuid.uuid4())
-            filename = f"video_{video_id}_{video_file.filename}"
+            # Use only the file name from the uploaded file
+            filename = video_file.filename
             blob = self.video_bucket.blob(filename)
+            video_url = f"gs://{self.video_bucket_name}/{filename}"
+
             blob.upload_from_file(video_file)
+
             logger.info(f"Video {filename} uploaded to GCS bucket {self.video_bucket_name}")
-            return video_id
+            try:
+                upload_date = datetime.now()
+                video_metadata = {"video_id": video_id, "video_gcs_uri": video_url, "filename": filename, "upload_date": upload_date}
+                self.db.store_video_metadata(video_metadata)
+                logger.info(f"Video metadata for video_id {video_id} stored in the database.")
+            except Exception as e:
+                logger.error(f"Error storing video metadata in the database: {e}", exc_info=True)
+
+            return video_metadata["video_id"]
         except Exception as e:
             logger.error(f"Error uploading video to GCS: {e}", exc_info=True)
             raise
 
     def download_video_to_temp(self, video_id):
         try:
-            video_filename = self._get_video_filename(video_id) # Assuming you store video filename somewhere or can derive it
-            if not video_filename:
-                logger.warning(f"Video filename not found for video ID: {video_id}")
+            video_metadata = self.db.get_video_metadata(video_id)
+            if not video_metadata:
+                logger.warning(f"Video metadata not found for video ID: {video_id}")
                 return None
 
-            blob = self.video_bucket.blob(video_filename)
-            temp_filepath = os.path.join(self.config.VIDEO_UPLOAD_FOLDER_VIDEOS, video_filename) # Local temp path
+            video_gcs_uri = video_metadata["video_gcs_uri"]
+            filename = video_metadata["filename"]
+            
+            if not video_gcs_uri:
+                raise ValueError("video gcs uri is null")
+
+            blob = self.storage_client.blob_from_uri(video_gcs_uri)
+            temp_filepath = os.path.join(self.config.VIDEO_UPLOAD_FOLDER_VIDEOS, filename) # Local temp path
             blob.download_to_filename(temp_filepath)
             logger.info(f"Video {video_filename} downloaded from GCS to {temp_filepath}")
             return temp_filepath
@@ -56,44 +77,50 @@ class StorageService:
     def list_videos(self):
         try:
             videos = []
-            blobs = self.storage_client.list_blobs(self.video_bucket)
-            for blob in blobs:
-                if blob.name.startswith('video_'): # Assuming video filenames start with 'video_'
-                    video_id = blob.name.split('_')[1] # Extract video_id from filename
-                    videos.append({'id': video_id, 'filename': blob.name}) # You might need to store more metadata
+            video_metadatas = self.db.list_video_metadata()
+            for video_metadata in video_metadatas:
+                videos.append({'id': video_metadata["video_id"], 'filename': video_metadata["filename"]})
             return videos
         except Exception as e:
             logger.error(f"Error listing videos from GCS: {e}", exc_info=True)
             return []
 
     def delete_video(self, video_id):
+        """Delete video file by querying metadata, and delete the file in gcs.
+
+        Args:
+            video_id (_type_): _description_
+        """
+
         try:
-            video_filename = self._get_video_filename(video_id)
-            if video_filename:
-                blob = self.video_bucket.blob(video_filename)
-                blob.delete()
-                logger.info(f"Video {video_filename} deleted from GCS bucket {self.video_bucket_name}")
-            else:
-                logger.warning(f"Video filename not found for video ID: {video_id}, cannot delete from GCS.")
+            video_metadata = self.db.get_video_metadata(video_id)
+            if not video_metadata:
+                logger.warning(f"Video metadata not found for video ID: {video_id}")
+            return
+            
+            # Delete related frames from GCS
+            frames = self.db.get_frames_by_video_id(video_id)
+            if frames:
+                for frame in frames:
+                    frame_gcs_uri = frame["frame_gcs_uri"]
+                    try:
+                        frame_blob = self.storage_client.blob_from_uri(frame_gcs_uri)
+                        frame_blob.delete()
+                        logger.info(f"Frame {frame_gcs_uri} deleted from GCS.")
+                    except Exception as e:
+                        logger.error(f"Error deleting frame {frame_gcs_uri} from GCS: {e}", exc_info=True)
 
-            # Also delete frames associated with this video from frame bucket (optional, depending on requirements)
-            # ... (implementation to delete frames based on video_id prefix)
+            video_gcs_uri = video_metadata["video_gcs_uri"]
+            video_blob = self.storage_client.blob_from_uri(video_gcs_uri)
+            video_blob.delete()
+            self.db.delete_video_metadata(video_id)
 
+            logger.info(f"Video {video_metadata['filename']} deleted from GCS bucket {self.video_bucket_name}")
         except Exception as e:
             logger.error(f"Error deleting video from GCS: {e}", exc_info=True)
 
     def get_video_info(self, video_id):
-        # In a real app, you'd likely store video metadata (like GCS URL) in a database
-        # For now, let's construct a placeholder GCS URL based on video_id and filename convention
-        video_filename = self._get_video_filename(video_id)
-        if video_filename:
-            return {'video_url': f"gs://{self.video_bucket_name}/{video_filename}"}
-        return None
-
-    def _get_video_filename(self, video_id):
-        # This is a simplified approach. In a real app, you'd likely store video filename in a database
-        # or use a more robust naming convention that allows easy lookup.
-        blobs = self.storage_client.list_blobs(self.video_bucket, prefix=f"video_{video_id}_")
-        for blob in blobs:
-            return blob.name # Return the first matching filename (assuming only one video per video_id prefix)
+        video_metadata = self.db.get_video_metadata(video_id)
+        if video_metadata:
+            return {"video_url": video_metadata["video_gcs_uri"]}
         return None

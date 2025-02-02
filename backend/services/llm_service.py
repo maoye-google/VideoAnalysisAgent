@@ -12,7 +12,12 @@ class LLMService:
     def analyze_image(self, image_gcs_uri):
         try:
             image_part = Part.from_uri(image_gcs_uri, mime_type='image/jpeg') # Assuming JPEG frames
-            prompt = "Describe the objects and scene in this image in detail, and identify any detected objects with bounding boxes if possible. Output in JSON format with 'text_description' and 'detected_objects' (list of objects with 'label' and 'bounding_box' if available)."
+            prompt = '''Describe the objects and scene in this image in detail, and identify any detected objects with bounding boxes if possible. \n
+                        Output in JSON format with 'text_description' and 'detected_objects'.
+                        'text_description' should be less then 100 words, explaning what the frame contains.
+                        'detected_objects' should be a list of max to 10 objects with 'object_type', 'object_color', 'object_descrition').
+                        Never return masks or code fencing. Never ask questions.
+            '''
 
             response = self.model.generate_content([prompt, image_part])
             response.resolve() # Resolve futures, handle potential errors.

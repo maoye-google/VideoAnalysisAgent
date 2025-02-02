@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from config import Config
 from services.video_analysis_service import VideoAnalysisService
-from services.embedding_service import EmbeddingService
 from services.query_service import QueryService
 from services.storage_service import StorageService
 from db.database import Database
@@ -18,11 +17,10 @@ logging.basicConfig(level=logging.INFO) # Set default log level
 logger = logging.getLogger(__name__)
 
 # Initialize services
-db = Database(app.config)
-storage_service = StorageService(app.config)
-embedding_service = EmbeddingService(app.config, db, storage_service)
-query_service = QueryService(app.config, db, storage_service, embedding_service)
-video_analysis_service = VideoAnalysisService(app.config, storage_service, embedding_service, db)
+db = Database(app.config)  
+storage_service = StorageService(app.config, db) #Pass db instance to storage service
+query_service = QueryService(app.config, db, storage_service)
+video_analysis_service = VideoAnalysisService(app.config, storage_service, db)
 
 
 @app.route('/api/videos', methods=['POST'])

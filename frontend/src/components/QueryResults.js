@@ -21,12 +21,13 @@ function QueryResults({ results }) {
                     <img src={frame.frame_url} alt={`Frame ${index}`} style={{ maxWidth: '300px' }} />
                     <p>Timeframe: {frame.timeframe}</p>
                     <p>Video Link: <a href={frame.video_link} target="_blank" rel="noopener noreferrer">View Video</a></p>
+                    <p>Confidence: To-Be-Calculated</p>
                     {frame.detected_objects && frame.detected_objects.length > 0 && (
                         <div>
                             <p>Detected Objects:</p>
                             <ul>
                                 {frame.detected_objects.map((obj, objIndex) => (
-                                    <li key={objIndex}>{obj.label} (Confidence: {obj.confidence})</li>
+                                    <li key={objIndex}>Type: {obj.object_type}    Color: {obj.object_color}</li>
                                 ))}
                             </ul>
                         </div>

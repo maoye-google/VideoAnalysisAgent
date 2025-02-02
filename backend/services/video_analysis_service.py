@@ -5,17 +5,15 @@ import uuid
 import threading
 import time
 from services.llm_service import LLMService
-from services.embedding_service import EmbeddingService
 from services.storage_service import StorageService
 from db.database import Database
 
 logger = logging.getLogger(__name__)
 
 class VideoAnalysisService:
-    def __init__(self, config, storage_service: StorageService, embedding_service: EmbeddingService, db: Database):
+    def __init__(self, config, storage_service: StorageService, db: Database):
         self.config = config
         self.storage_service = storage_service
-        self.embedding_service = embedding_service
         self.db = db
         self.llm_service = LLMService(config)
         self.analysis_processes = {} # track analysis process status, progress, cancellation
@@ -90,7 +88,6 @@ class VideoAnalysisService:
                     # Analyze frame using LLM and create embedding
                     frame_analysis_result = self.llm_service.analyze_image(frame_gcs_uri) # Assuming this returns detected objects and text
                     if frame_analysis_result:
-                        embedding = self.embedding_service.create_embedding_from_text(frame_analysis_result.get('text_description', '')) # Embed text description
                         frame_metadata = {
                             'frame_id': frame_id,
                             'video_id': video_id,
@@ -100,7 +97,7 @@ class VideoAnalysisService:
                             'text_description': frame_analysis_result.get('text_description', '')
                         }
                         self.db.store_frame_embedding(frame_metadata, embedding)
-                        logger.debug(f"Frame {frame_id} analysis and embedding stored for video {video_id}")
+                        logger.debug(f"Frame {frame_id} analysis result stored for video {video_id}")
 
                 frame_count += 1
                 processed_frames += 1

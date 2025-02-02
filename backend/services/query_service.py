@@ -1,26 +1,20 @@
 import logging
-from services.llm_service import LLMService
-from services.embedding_service import EmbeddingService
 from services.storage_service import StorageService
 from db.database import Database
 
 logger = logging.getLogger(__name__)
 
 class QueryService:
-    def __init__(self, config, db: Database, storage_service: StorageService, embedding_service: EmbeddingService):
+    def __init__(self, config, db: Database, storage_service: StorageService):
         self.config = config
         self.db = db
         self.storage_service = storage_service
-        self.embedding_service = embedding_service
-        self.llm_service = LLMService(config)
 
+    # When not specified what type of similarity search,
+    # The system will use find_similar_frames_by_objects by default
     def query_video(self, video_id, query_text):
         try:
-            query_embedding = self._get_query_embedding(query_text)
-            if query_embedding is None:
-                return {'message': 'Could not create embedding for the query.'}
-
-            similar_frames = self.embedding_service.find_similar_frames(query_embedding, video_id)
+            similar_frames = self.find_similar_frames_by_objects(query_text, video_id)
             if not similar_frames:
                 return {'message': 'No relevant video frames found for your query.'}
 
@@ -43,5 +37,22 @@ class QueryService:
             logger.error(f"Error processing video query: {e}", exc_info=True)
             return {'message': 'Error processing your query.'}
 
-    def _get_query_embedding(self, query_text):
-        return self.embedding_service.create_embedding_from_text(query_text)
+    def find_similar_frames_by_description(self, query_str, video_id, top_k=3):
+        try:
+            similar_frames = self.db.frame_description_similarity_search(
+                query_str, video_id, top_k=top_k
+            )
+            return similar_frames
+        except Exception as e:
+            logger.error(
+                f"Error finding similar frames by description for video {video_id} with query embedding: {e}", exc_info=True
+            )
+            return []
+
+    def find_similar_frames_by_objects(self, query_str, video_id, top_k=3):
+        try:
+            similar_frames = self.db.objects_similarity_search(query_str, video_id, top_k=top_k)
+            return similar_frames
+        except Exception as e:
+            logger.error(f"Error finding similar frames by objects for video {video_id} with query embedding: {e}", exc_info=True)
+            return []

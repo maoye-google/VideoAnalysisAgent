@@ -15,7 +15,7 @@ create table frames (
 	frame_id VARCHAR(255) PRIMARY KEY,
 	video_id VARCHAR(255) REFERENCES videos(video_id),
 	frame_gcs_uri VARCHAR(255),
-	seconds INT,
+	timeframe VARCHAR(255),
 	detected_objects_json TEXT,
 	text_description TEXT,
 	frame_embedding vector(768) GENERATED ALWAYS AS (embedding('text-embedding-005', text_description)) STORED,
