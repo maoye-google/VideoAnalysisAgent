@@ -65,15 +65,18 @@ class StorageService:
                 return None
 
             video_gcs_uri = video_metadata.get("video_gcs_uri")
-            filename = video_metadata.get("filename")
-            
-            if not video_gcs_uri:
-                raise ValueError("video gcs uri is null")
+            _,_,bucket_name,_filename = video_gcs_uri.split("/")
+            bucket = self.storage_client.bucket(bucket_name)
+            blob = bucket.blob(_filename)
 
-            blob = self.storage_client.blob_from_uri(video_gcs_uri)
-            temp_filepath = os.path.join(self.config.get('VIDEO_UPLOAD_FOLDER_VIDEOS'), filename) # Local temp path
+            if blob is None :
+                logger.error(f"Cannot find GCS Object as {video_gcs_uri}", exc_info=True)
+                return None
+            
+            temp_filepath = os.path.join(self.config.get('VIDEO_UPLOAD_FOLDER_VIDEOS'), _filename) # Local temp path
             blob.download_to_filename(temp_filepath)
-            logger.info(f"Video {video_filename} downloaded from GCS to {temp_filepath}")
+            filename = video_metadata.get("filename")
+            logger.info(f"Video {filename} downloaded from GCS to {temp_filepath}")
             return temp_filepath
         except Exception as e:
             logger.error(f"Error downloading video from GCS: {e}", exc_info=True)
