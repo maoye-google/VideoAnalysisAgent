@@ -4,5 +4,6 @@ python-dotenv
 google-cloud-storage
 google-generativeai
 opencv-python-headless
-pillow>=10.2.0
+olefile
+Pillow>=10.2.0
 psycopg2-binary

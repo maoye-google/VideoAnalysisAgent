@@ -21,6 +21,8 @@ class Database:
         self.config = config
         self.connection = None
 
+        # connection_string = self.config.get("ALLOYDB_CONNECTION_STRING")
+
         connection_string = _create_connection_string(
             self.config.get("ALLOYDB_USER"),
             self.config.get("ALLOYDB_PASSWORD"),
@@ -116,7 +118,7 @@ class Database:
               video_list = [dict(zip(['video_id', 'video_gcs_uri', 'filename', 'upload_date'], row)) for row in results]
               return video_list
         except Exception as e:
-            logger.error(f"Error during video get operation for video {video_id}: {e}", exc_info=True)
+            logger.error(f"Error during list all video metadata: {e}", exc_info=True)
             return []
 
     def delete_video_metadata(self, video_id):
@@ -205,7 +207,7 @@ class Database:
                 cur.execute("""
                     INSERT INTO frames (frame_id, video_id, frame_gcs_uri, timeframe, detected_objects_json, text_description)
                     VALUES (%s, %s, %s, %s, %s, %s)
-                """, (frame_id, video_id, frame_gcs_uri, timeframe, detected_objects_json, text_description))
+                """, (frame_id, video_id, frame_gcs_uri, timeframe, json.dumps(detected_objects_json), text_description))
             self.connection.commit()
             logger.debug(f"Frame metadata stored successfully for frame ID: {frame_id}")
         except Exception as e:

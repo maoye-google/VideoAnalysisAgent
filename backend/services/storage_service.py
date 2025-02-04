@@ -81,15 +81,18 @@ class StorageService:
         except Exception as e:
             logger.error(f"Error downloading video from GCS: {e}", exc_info=True)
             return None
-
+            
     def upload_frame_bytes(self, frame_id, video_id, frame_bytes):
-        
+        if frame_bytes is None:
+            logger.warning(f"Frame bytes is None, cannot upload frame {frame_id} for video {video_id}")
+            return None
         try:
             gcs_file_name = self._compose_gcs_frame_name(video_id, frame_id)
             frame_url = f"gs://{self.frame_bucket_name}/{gcs_file_name}"
-            
+
+
             blob = self.frame_bucket.blob(gcs_file_name)
-            blob.upload(frame_bytes)
+            blob.upload_from_string(frame_bytes, content_type='image/jpeg')
 
             logger.info(f"Frame {gcs_file_name} uploaded to GCS bucket {self.frame_bucket_name}")
 

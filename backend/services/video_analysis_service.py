@@ -95,7 +95,7 @@ class VideoAnalysisService:
 
                     # Analyze frame using LLM and create embedding
                     if frame_analysis_result:
-                        self.storage_service.upload_frame_bytes(frame_id, video_id, frame_bytes)
+                        frame_gcs_uri = self.storage_service.upload_frame_bytes(frame_id, video_id, frame_bytes)
 
                         # self.storage_service.upload_frame_bytes(frame_bytes, frame_filename)
                         logger.debug(f"Frame {frame_id} uploaded to GCS for video {video_id}")

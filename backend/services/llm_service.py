@@ -1,5 +1,7 @@
 import logging
 from PIL import Image
+import re
+import json
 from io import BytesIO
 from google.generativeai import GenerativeModel, configure
 
@@ -11,6 +13,31 @@ class LLMService:
         configure(api_key=config.get('GCP_VERTEX_AI_API_KEY'))
         self.model = GenerativeModel(config.get('GEMINI_MODEL_NAME')) # e.g., 'gemini-2.0-flash-thinking'
 
+    def parse_gemini_json_response(self, gemini_response_text):
+        """Extracts and parses JSON from a Gemini response string."""
+
+        # 1. Remove code block markers (```json and ```)
+        cleaned_text = gemini_response_text.replace("```json", "").replace("```", "").strip()
+
+        # 2. Remove any leading/trailing newlines or whitespace
+        cleaned_text = cleaned_text.strip()
+
+        # 3. (Optional but Recommended) Use a regular expression for more robust cleaning:
+        # This handles cases where there might be other non-JSON content outside the code block.
+        match = re.search(r"\{.*\}", cleaned_text, re.DOTALL)  # Find the JSON object
+        if match:
+            cleaned_text = match.group(0)
+        else:
+            return None # Or raise an exception, or return an empty dict if no JSON is found.
+
+        try:
+            data = json.loads(cleaned_text)
+            return data
+        except json.JSONDecodeError as e:
+            print(f"JSONDecodeError: {e}")
+            print(f"Problematic JSON string: {cleaned_text}")  # Print the problematic string for debugging
+            return None  # Or raise the exception if you want to stop execution
+            
     def analyze_image(self, image_bytes):
         try:
             image = Image.open(BytesIO(image_bytes))
@@ -29,9 +56,9 @@ class LLMService:
                 # **Important:** You'll need to parse the JSON output from Gemini here.
                 # Gemini's output format needs to be reliably parsed. This is a placeholder.
                 # Example parsing (adjust based on actual Gemini output):
+
                 try:
-                    import json
-                    analysis_result = json.loads(llm_output_text)
+                    analysis_result = self.parse_gemini_json_response(llm_output_text)
                     logger.debug(f"LLM Analysis Result: {analysis_result}")
                     return analysis_result
                 except json.JSONDecodeError:
