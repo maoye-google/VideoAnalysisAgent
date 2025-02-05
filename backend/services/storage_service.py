@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 import uuid
-
+from datetime import timedelta
 from google.cloud import storage
 from db.database import Database
 
@@ -32,6 +32,25 @@ class StorageService:
     def _compose_gcs_frame_name(self,video_id, frame_id):
         gcs_file_name = f'{video_id}_{frame_id}.jpg'
         return gcs_file_name
+
+    def get_signed_url(self, gcs_url):
+        """Generates a signed URL for the given GCS URL using a service account.
+
+        Args:
+            gcs_url: The GCS URL of the object.
+
+        Returns:
+            A signed URL that is valid for one hour, or None if there was an error.
+        """
+        try:
+            bucket_name = gcs_url.split('/')[2]
+            blob_name = '/'.join(gcs_url.split('/')[3:])
+            bucket = self.storage_client.bucket(bucket_name)
+            blob = bucket.blob(blob_name)
+            return blob.generate_signed_url(version="v4", expiration=timedelta(hours=1), method="GET")
+        except Exception as e:
+            logger.error(f"Error generating signed URL: {e}", exc_info=True)
+            return None
 
     def upload_video(self, video_file, video_id):
         try:
