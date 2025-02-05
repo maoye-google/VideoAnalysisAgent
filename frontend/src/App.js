@@ -25,24 +25,14 @@ function App() {
 
 
     return (
-        <div className="App container mt-4">
-            <div className="row">
-                <div className="col">
-                    <h1 className="text-center mb-4">Video Analysis Agent</h1>
-                </div>
-            </div>
-            <div className="row">
-                <div className="col-md-4">
-                    <VideoUpload onVideoUploaded={handleVideoUploadedOrDeleted} />
-                    <VideoList onVideoSelected={handleVideoSelected} onVideoDeleted={handleVideoUploadedOrDeleted} refresh={refreshVideoList}/>
-                </div>
-                <div className="col-md-8">
-                    <AnalysisProgress selectedVideoId={selectedVideoId} />
-                    <VideoQuery selectedVideoId={selectedVideoId} onQueryResults={handleQueryResults} />
-                    <QueryResults results={queryResults} />
-                </div>
-            </div>
-        </div>        
+        <div className="App">
+            <h1>Video Analysis Agent</h1>
+            <VideoUpload onVideoUploaded={handleVideoUploadedOrDeleted} />
+            <VideoList onVideoSelected={handleVideoSelected} onVideoDeleted={handleVideoUploadedOrDeleted} refresh={refreshVideoList}/>
+            <AnalysisProgress selectedVideoId={selectedVideoId} />
+            <VideoQuery selectedVideoId={selectedVideoId} onQueryResults={handleQueryResults} />
+            <QueryResults results={queryResults} />
+        </div>
     );
 }
 

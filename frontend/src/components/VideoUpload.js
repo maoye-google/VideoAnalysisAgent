@@ -45,33 +45,19 @@ function VideoUpload({ onVideoUploaded }) {
         }
     };
 
-        return (
-                <div className="container mt-3">
-                        <div className="row justify-content-center">
-                                <div className="col-md-6">
-                                        <div className="card">
-                                                <div className="card-body">
-                                                        <h5 className="card-title">Upload Video</h5>
-                                                        <div className="mb-3">
-                                                                <label htmlFor="videoFile" className="form-label">Select Video File:</label>
-                                                                <input type="file" id="videoFile" className="form-control" accept="video/*" onChange={handleFileChange} disabled={isUploading} />
-                                                        </div>
-                                                        <button type="button" className="btn btn-primary" onClick={handleUpload} disabled={!selectedFile || isUploading}>
-                                                                Upload Video
-                                                        </button>
-                                                        {isUploading && (
-                                                                <div className="mt-3">
-                                                                        <div className="progress">
-                                                                                <div className="progress-bar" role="progressbar" style={{ width: `${uploadProgress}%` }} aria-valuenow={uploadProgress} aria-valuemin="0" aria-valuemax="100">{uploadProgress}%</div>
-                                                                        </div>
-                                                                </div>
-                                                        )}
-                                                </div>
-                                        </div>
-                                </div>
-                        </div>
+    return (
+        <div>
+            <input type="file" accept="video/*" onChange={handleFileChange} disabled={isUploading} />
+            <button onClick={handleUpload} disabled={!selectedFile || isUploading}>
+                Upload Video
+            </button>
+            {isUploading && (
+                <div>
+                    <progress value={uploadProgress} max="100" /> {uploadProgress}%
                 </div>
-        );
-    }
+            )}
+        </div>
+    );
+}
 
 export default VideoUpload;
