@@ -11,15 +11,22 @@ function AnalysisProgress({ selectedVideoId }) {
             startProgressCheck();
         }
         return () => stopProgressCheck(); // Cleanup on unmount
-    }, [selectedVideoId, isAnalyzing]);
+    }, [selectedVideoId]);
+// }, [selectedVideoId, isAnalyzing]);
 
     const progressCheckInterval = React.useRef(null);
 
     const startProgressCheck = () => {
         console.log('Start Progress Check !')
-        if (!isAnalyzing) {
-            setIsAnalyzing(true)
-        }
+        // if (!isAnalyzing && progress < 100 ) {
+        //     setIsAnalyzing(true)
+        // } else if (progress == 100 ){
+        //     stopProgressCheck();
+        //     setIsAnalyzing(false);
+        //     setAnalysisStatus("Completed");
+        //     return
+        // }
+        setIsAnalyzing(true)
         setAnalysisStatus("Analyzing");
         progressCheckInterval.current = setInterval(async () => {
             try {

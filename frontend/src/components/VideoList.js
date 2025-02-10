@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-function VideoList({ onVideoSelected, onVideoDeleted }) {
+function VideoList({ onVideoSelected, onVideoDeleted, refresh }) {
     const [videos, setVideos] = useState([]);
 
     useEffect(() => {
         fetchVideos();
-    }, []);
+    }, [refresh]);
 
     const fetchVideos = async () => {
         try {
@@ -51,10 +51,10 @@ function VideoList({ onVideoSelected, onVideoDeleted }) {
             <ul>
                 {videos.map((video) => (
                     <li key={video.video_id}>
-                        {video.filename}
-                        <button onClick={() => onVideoSelected(video.video_id)}>Select</button>
-                        <button onClick={() => handleAnalyzeVideo(video.video_id)}>Analyze</button>
-                        <button onClick={() => handleDeleteVideo(video.video_id)}>Delete</button>
+                        <td width="150px">{video.filename}</td>
+                        <td><button onClick={() => onVideoSelected(video.video_id)}>Select</button></td>
+                        <td><button onClick={() => handleAnalyzeVideo(video.video_id)}>Analyze</button></td>
+                        <td><button onClick={() => handleDeleteVideo(video.video_id)}>Delete</button></td>
                     </li>
                 ))}
             </ul>

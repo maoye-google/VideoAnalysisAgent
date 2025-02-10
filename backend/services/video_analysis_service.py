@@ -19,7 +19,7 @@ class VideoAnalysisService:
             _video_id = x["video_id"]
             if (_video_id not in self.analysis_processes):
                 self.analysis_processes[_video_id] = {
-                    'status': 'Finished',
+                    'status': 'Completed',
                     'progress': 100,
                 }
                 
@@ -121,10 +121,14 @@ class VideoAnalysisService:
                             'frame_id': frame_id,
                             'video_id': video_id,
                             'frame_gcs_uri': frame_gcs_uri,
-                            'timeframe': f"Frame {processed_frames / sampling_rate}s", # Example timeframe
+                            'timeframe': f"Frame {processed_frames / frame_interval}s", # Example timeframe
                             'detected_objects': frame_analysis_result.get('detected_objects', []), # List of objects with labels and bounding boxes
                             'text_description': frame_analysis_result.get('text_description', '')
                         }
+                        logger.debug(f"Current processed_frames is {processed_frames}")
+                        logger.debug(f"Current total_frames is {total_frames}")
+                        logger.debug(f"Current frame_interval is {frame_interval}")
+                        logger.debug(f"Current Timeframe is {frame_metadata['timeframe']}")
                         self.db.store_frame_metadata(frame_metadata)
                         logger.debug(f"Frame {frame_id} analysis result stored for video {video_id}")
 
