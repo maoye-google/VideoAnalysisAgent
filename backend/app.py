@@ -54,9 +54,6 @@ def upload_video():
         return jsonify({'message': 'Failed to upload video'}), 500
 
 @app.route('/api/videos', methods=['GET'])
-
-
-
 def list_videos():
     try:
         videos = storage_service.list_videos()

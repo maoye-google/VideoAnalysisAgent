@@ -45,21 +45,6 @@ class Database:
             self.connection.close()
             logger.info("Database connection closed.")
             
-# - Table Name : videos
-# - Schema:
-
-# 	video_id VARCHAR(255) PRIMARY KEY,
-# 	filename VARCHAR(255),
-# 	video_gcs_uri VARCHAR(255),
-# 	upload_date TIMESTAMP
-	
-# create table videos (
-# 	video_id VARCHAR(255) PRIMARY KEY,
-# 	filename VARCHAR(255),
-# 	video_gcs_uri VARCHAR(255),
-# 	upload_date TIMESTAMP
-# 					)
-
     def store_video_metadata(self, video_metadata):
         """Stores video metadata."""
         # Placeholder implementation - replace with actual AlloyDB insert
@@ -182,29 +167,6 @@ class Database:
         except Exception as e:
             logger.error(f"Error fetching analyzed videos : {e}", exc_info=True)
             return []
-
-# - Table Name : frames
-# - Schema:
-
-# 	frame_id VARCHAR(255) PRIMARY KEY,
-# 	video_id VARCHAR(255),
-# 	frame_gcs_uri VARCHAR(255),
-# 	timeframe VARCHAR(256),
-# 	detected_objects_json VARCHAR(255),
-# 	text_description VARCHAR(255),
-# 	frame_embedding vector(768),
-# 	objects_embedding vector(768),
-	
-# create table frames (
-# 	frame_id VARCHAR(255) PRIMARY KEY,
-# 	video_id VARCHAR(255) REFERENCES videos(video_id),
-# 	frame_gcs_uri VARCHAR(255),
-# 	timeframe VARCHAR(255),
-# 	detected_objects_json VARCHAR(255),
-# 	text_description VARCHAR(255),
-# 	frame_embedding vector(768) GENERATED ALWAYS AS (embedding('text-embedding-005', text_description)) STORED,
-# 	objects_embedding vector(768) GENERATED ALWAYS AS (embedding('text-embedding-005', detected_objects_json)) STORED
-# 	)
 
     def store_frame_metadata(self, frame_metadata):
         """Stores frame metadata and its embedding vector."""
