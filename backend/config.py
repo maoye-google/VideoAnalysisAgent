@@ -11,6 +11,7 @@ class Config:
     # Google Cloud Config
     GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID')
     GCP_REGION = os.environ.get('GCP_REGION', 'us-central1') # Default region
+    GOOGLE_APPLICATION_CREDENTIALS = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS','credential/agent-sa-key.json')
     GCP_VERTEX_AI_API_KEY = os.environ.get('GCP_VERTEX_AI_API_KEY')
     GEMINI_MODEL_NAME = os.environ.get('GEMINI_MODEL_NAME', 'gemini-2.0-flash') # Default model
     GCS_BUCKET_NAME_VIDEOS = os.environ.get('GCS_BUCKET_NAME_VIDEOS')
@@ -22,6 +23,8 @@ class Config:
     ALLOYDB_DATABASE_NAME = os.environ.get('ALLOYDB_DATABASE_NAME')
     ALLOYDB_USER = os.environ.get('ALLOYDB_USER')
     ALLOYDB_PASSWORD = os.environ.get('ALLOYDB_PASSWORD')
+    ALLOYDB_HOST = os.environ.get('ALLOYDB_HOST')
+    ALLOYDB_PORT = os.environ.get('ALLOYDB_PORT')
 
     # Video Analysis Config
     VIDEO_UPLOAD_FOLDER_VIDEOS = 'uploads/videos' # Local upload folder for videos (for local dev)

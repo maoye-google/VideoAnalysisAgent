@@ -2,45 +2,61 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from config import Config
 from services.video_analysis_service import VideoAnalysisService
-from services.embedding_service import EmbeddingService
 from services.query_service import QueryService
 from services.storage_service import StorageService
 from db.database import Database
 import logging
+import uuid
+import traceback
 import os
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}}) # Allow CORS for /api endpoints
+CORS(app, origins= [
+    "*",
+    "cloudworkstations.dev"
+]) # Allow CORS for /api endpoints
 app.config.from_object(Config)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO) # Set default log level
+logging.basicConfig(level=logging.DEBUG) # Set default log level
 logger = logging.getLogger(__name__)
 
+# print(app.config)
+# Correct Way to get Config : print(app.config.get('GCP_PROJECT_ID','Unknown'))
+# Wrong Way to get Config: print(app.config.GCP_PROJECT_ID)
+
 # Initialize services
-db = Database(app.config)
-storage_service = StorageService(app.config)
-embedding_service = EmbeddingService(app.config, db, storage_service)
-query_service = QueryService(app.config, db, storage_service, embedding_service)
-video_analysis_service = VideoAnalysisService(app.config, storage_service, embedding_service, db)
+db = Database(app.config)  
+storage_service = StorageService(app.config, db) #Pass db instance to storage service
+query_service = QueryService(app.config, db, storage_service)
+video_analysis_service = VideoAnalysisService(app.config, storage_service, db)
 
 
 @app.route('/api/videos', methods=['POST'])
 def upload_video():
+    logger.debug('Start File Uploading')
+
     if 'video' not in request.files:
         return jsonify({'message': 'No video file part'}), 400
     video_file = request.files['video']
     if video_file.filename == '':
         return jsonify({'message': 'No selected video file'}), 400
 
+    logger.debug(f'video file name is {video_file.filename}')
+
+    video_id = str(uuid.uuid4())
     try:
-        video_id = storage_service.upload_video(video_file)
+        video_metadata = storage_service.upload_video(video_file,video_id)
         return jsonify({'message': 'Video uploaded successfully', 'video_id': video_id}), 201
     except Exception as e:
         logger.error(f"Error uploading video: {e}")
+        traceback.print_exc()  # Print the full traceback for debugging
         return jsonify({'message': 'Failed to upload video'}), 500
 
 @app.route('/api/videos', methods=['GET'])
+
+
+
 def list_videos():
     try:
         videos = storage_service.list_videos()
@@ -60,9 +76,10 @@ def delete_video(video_id):
 
 @app.route('/api/videos/<video_id>/analyze', methods=['POST'])
 def analyze_video(video_id):
+
     try:
         video_analysis_service.start_analysis(video_id)
-        return jsonify({'message': 'Video analysis started'}), 202  # Accepted for processing
+        return jsonify({'message': 'Video analysis started'}), 202
     except Exception as e:
         logger.error(f"Error starting video analysis for {video_id}: {e}")
         return jsonify({'message': 'Failed to start video analysis'}), 500
@@ -92,7 +109,8 @@ def query_video(video_id):
         return jsonify({'message': 'Query text is required'}), 400
 
     try:
-        results = query_service.query_video(video_id, query_text)
+        _top_k=1
+        results = query_service.query_video(video_id, query_text,_top_k)
         return jsonify(results), 200
     except Exception as e:
         logger.error(f"Error querying video {video_id}: {e}")

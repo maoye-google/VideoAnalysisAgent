@@ -27,6 +27,12 @@ function VideoQuery({ selectedVideoId, onQueryResults }) {
         }
     };
 
+    const handleKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            handleQuerySubmit();
+        }
+    };
+
     return (
         <div>
             <h2>Video Query</h2>
@@ -38,6 +44,7 @@ function VideoQuery({ selectedVideoId, onQueryResults }) {
                         placeholder="Enter your query (e.g., find person in red coat)"
                         value={queryText}
                         onChange={(e) => setQueryText(e.target.value)}
+                        onKeyPress={handleKeyPress}
                     />
                     <button onClick={handleQuerySubmit}>Search</button>
                 </div>

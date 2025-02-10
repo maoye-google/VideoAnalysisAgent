@@ -6,8 +6,10 @@ frontend/package-lock.json
 
 # Backend
 backend/__pycache__
+backend/**/__pycache__
 backend/*.pyc
 backend/*.log
+backend/credential/*
 backend/instance
 backend/venv
 backend/uploads/videos/*
@@ -24,3 +26,6 @@ backend/requirements.txt # If you manage requirements separately
 
 # IDX
 .idx
+
+# Test Recordings
+recordings/*
