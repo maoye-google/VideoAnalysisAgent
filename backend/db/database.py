@@ -168,6 +168,21 @@ class Database:
             logger.error(f"Error fetching frames for video ID {video_id}: {e}", exc_info=True)
             return []
 
+    def get_analyzed_video_list(self):
+        """Gets all videos associated with frames."""
+        logger.debug("Fetching analyzed Video IDs")
+        try:
+            with self.connection.cursor() as cur:
+                cur.execute("""
+                   SELECT distinct(video_id) FROM frames
+                """)
+                results = cur.fetchall()
+                frames = [dict(zip(['video_id'], row)) for row in results]
+                return frames
+        except Exception as e:
+            logger.error(f"Error fetching analyzed videos : {e}", exc_info=True)
+            return []
+
 # - Table Name : frames
 # - Schema:
 

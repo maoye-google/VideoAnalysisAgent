@@ -109,7 +109,8 @@ def query_video(video_id):
         return jsonify({'message': 'Query text is required'}), 400
 
     try:
-        results = query_service.query_video(video_id, query_text)
+        _top_k=1
+        results = query_service.query_video(video_id, query_text,_top_k)
         return jsonify(results), 200
     except Exception as e:
         logger.error(f"Error querying video {video_id}: {e}")

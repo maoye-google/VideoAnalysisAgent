@@ -12,12 +12,25 @@ from db.database import Database
 logger = logging.getLogger(__name__)
 
 class VideoAnalysisService:
+
+    def load_finished_videos(self):
+        ids = self.db.get_analyzed_video_list()
+        for x in ids:
+            _video_id = x["video_id"]
+            if (_video_id not in self.analysis_processes):
+                self.analysis_processes[_video_id] = {
+                    'status': 'Finished',
+                    'progress': 100,
+                }
+                
+
     def __init__(self, config, storage_service: StorageService, db: Database):
         self.config = config
         self.storage_service = storage_service
         self.db = db
         self.llm_service = LLMService(config)
         self.analysis_processes = {} # track analysis process status, progress, cancellation
+        self.load_finished_videos()
         self.analysis_progress_interval = config.get('ANALYSIS_PROGRESS_UPDATE_INTERVAL') # seconds
 
     def start_analysis(self, video_id):
@@ -29,6 +42,7 @@ class VideoAnalysisService:
             'progress': 0,
             'cancel_event': threading.Event() # For cancellation
         }
+        # self.db.delete_video_metadata(video_id)
         thread = threading.Thread(target=self._analyze_video_thread, args=(video_id,))
         thread.start()
         self.analysis_processes[video_id]['status'] = 'Running'
@@ -40,6 +54,7 @@ class VideoAnalysisService:
         process_info = self.analysis_processes[video_id]
         return {'status': process_info['status'], 'progress': process_info['progress']}
 
+    
     def cancel_analysis(self, video_id):
         if video_id in self.analysis_processes and self.analysis_processes[video_id]['status'] == 'Running':
             self.analysis_processes[video_id]['cancel_event'].set() # Signal cancellation
@@ -121,6 +136,8 @@ class VideoAnalysisService:
             cap.release()
             os.remove(video_filepath) # Clean up temp video file
             self.analysis_processes[video_id]['status'] = 'Completed'
+            self.finished_analysis_videos[video_id] = True
+            self.db.mark_video_as_finished(video_id)
             logger.info(f"Video analysis completed for video ID: {video_id}")
 
         except Exception as e:

@@ -47,6 +47,7 @@ function AnalysisProgress({ selectedVideoId }) {
     };
 
     const stopProgressCheck = () => {
+        console.log("Stop Progress Check");
         clearInterval(progressCheckInterval.current);
     };
 

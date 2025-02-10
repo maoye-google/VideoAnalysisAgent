@@ -17,9 +17,9 @@ class QueryService:
 
     # When not specified what type of similarity search,
     # The system will use find_similar_frames_by_objects by default
-    def query_video(self, video_id, query_text):
+    def query_video(self, video_id, query_text, top_k=3):
         try:
-            similar_frames = self._find_similar_frames_by_description(query_text, video_id)
+            similar_frames = self._find_similar_frames_by_description(query_text, video_id, top_k)
             if not similar_frames:
                 return {'message': 'No relevant video frames found for your query.'}
 
