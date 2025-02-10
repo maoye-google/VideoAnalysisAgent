@@ -17,7 +17,9 @@ function AnalysisProgress({ selectedVideoId }) {
 
     const startProgressCheck = () => {
         console.log('Start Progress Check !')
-        setIsAnalyzing(true);
+        if (!isAnalyzing) {
+            setIsAnalyzing(true)
+        }
         setAnalysisStatus("Analyzing");
         progressCheckInterval.current = setInterval(async () => {
             try {

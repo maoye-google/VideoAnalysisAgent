@@ -80,8 +80,11 @@ class VideoAnalysisService:
                 raise IOError(f"Cannot open video file: {video_filepath}")
 
             fps = cap.get(cv2.CAP_PROP_FPS)
+            logger.debug(f"fps={fps}")
             frame_interval = int(fps / sampling_rate) if fps > sampling_rate else 1
+            logger.debug(f"frame_interval={frame_interval}")
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            logger.debug(f"total_frames={total_frames}")
             logger.info(f"Video FPS: {fps}, Sampling Rate: {sampling_rate}, Frame Interval: {frame_interval}, Total Frames: {total_frames}")
 
             while True:
@@ -118,7 +121,7 @@ class VideoAnalysisService:
                             'frame_id': frame_id,
                             'video_id': video_id,
                             'frame_gcs_uri': frame_gcs_uri,
-                            'timeframe': f"Frame {processed_frames // sampling_rate}s", # Example timeframe
+                            'timeframe': f"Frame {processed_frames / sampling_rate}s", # Example timeframe
                             'detected_objects': frame_analysis_result.get('detected_objects', []), # List of objects with labels and bounding boxes
                             'text_description': frame_analysis_result.get('text_description', '')
                         }
@@ -127,7 +130,7 @@ class VideoAnalysisService:
 
                 frame_count += 1
                 processed_frames += 1
-                progress = int((processed_frames / total_frames) * 100) if total_frames > 0 else 0
+                progress = int((processed_frames * frame_interval / total_frames) * 100) if total_frames > 0 else 0
                 self.analysis_processes[video_id]['progress'] = progress
 
                 if processed_frames % (int(fps) * self.analysis_progress_interval) == 0: # Update status periodically
@@ -136,8 +139,8 @@ class VideoAnalysisService:
             cap.release()
             os.remove(video_filepath) # Clean up temp video file
             self.analysis_processes[video_id]['status'] = 'Completed'
-            self.finished_analysis_videos[video_id] = True
-            self.db.mark_video_as_finished(video_id)
+            # self.finished_analysis_videos[video_id] = True
+            # self.db.mark_video_as_finished(video_id)
             logger.info(f"Video analysis completed for video ID: {video_id}")
 
         except Exception as e:
